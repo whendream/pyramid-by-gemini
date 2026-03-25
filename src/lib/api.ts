@@ -36,11 +36,13 @@ export async function getSymbolStats(symbol: string): Promise<SymbolStats> {
   }
   
   console.log(`[Stooq] Fetching fresh data for ${symbol}`);
-  // CORS proxy to fetch stooq CSV openly
-  const stooqUrl = `https://stooq.com/q/d/l/?s=${symbol.toUpperCase()}.US&i=d`;
-  const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(stooqUrl)}`;
-  
-  const res = await fetch(proxyUrl);
+  // 生产环境用 Vercel Rewrites 代理，本地开发用 corsproxy
+  const stooqParams = `?s=${symbol.toUpperCase()}.US&i=d`;
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const fetchUrl = isDev
+    ? `https://corsproxy.io/?url=${encodeURIComponent(`https://stooq.com/q/d/l/${stooqParams}`)}`
+    : `/api/stooq/${stooqParams}`;
+  const res = await fetch(fetchUrl);
   if (!res.ok) {
     throw new Error("Network response was not ok");
   }
